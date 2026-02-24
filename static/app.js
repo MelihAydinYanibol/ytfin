@@ -13,6 +13,10 @@ const form = document.getElementById("add-form");
 
 async function fetchJobs() {
   const response = await fetch("/api/jobs");
+  if (response.status === 401) {
+    window.location.href = "/login";
+    return;
+  }
   const data = await response.json();
   renderJobs(data);
 }
@@ -51,11 +55,19 @@ async function post(path, payload = {}) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
+  if (response.status === 401) {
+    window.location.href = "/login";
+    return {};
+  }
   return response.json();
 }
 
 async function fetchSources() {
   const response = await fetch("/api/sources");
+  if (response.status === 401) {
+    window.location.href = "/login";
+    return;
+  }
   const data = await response.json();
   playlistsEl.value = data.playlists || "";
   channelsEl.value = data.channels || "";

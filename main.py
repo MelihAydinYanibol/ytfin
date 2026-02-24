@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from dotenv import load_dotenv
 import yt_dlp
 from yt_dlp.utils import sanitize_filename
 import os
@@ -14,7 +15,10 @@ import xml.etree.ElementTree as ET
 from collections import deque
 from pathlib import Path
 
+load_dotenv()
+
 app = Flask(__name__)
+app.secret_key = os.environ.get("YTFIN_SECRET", "change-this-secret")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,8 +38,30 @@ DEFAULT_MAX_RESOLUTION = "1080p"
 DEFAULT_CODEC = "copy"
 DEFAULT_FPS = None
 
+ADMIN_USERNAME = os.environ.get("YTFIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("YTFIN_PASSWORD", "admin")
+SESSION_TOKEN = uuid.uuid4().hex
+
 # Check if FFmpeg is available
 FFMPEG_AVAILABLE = shutil.which('ffmpeg') is not None
+
+
+def _is_authenticated():
+    return session.get("user") == ADMIN_USERNAME and session.get("token") == SESSION_TOKEN
+
+
+@app.before_request
+def _require_auth():
+    public_paths = ("/login", "/logout", "/health")
+    if request.path.startswith("/static/"):
+        return None
+    if request.path in public_paths:
+        return None
+    if _is_authenticated():
+        return None
+    if request.path.startswith("/api/") or request.path == "/download":
+        return jsonify({"error": "Unauthorized"}), 401
+    return redirect(url_for("login"))
 
 
 def _ensure_source_files():
@@ -816,6 +842,25 @@ def get_fps():
 @app.route('/')
 def index():
     return render_template("index.html")
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = (request.form.get("username") or "").strip()
+        password = (request.form.get("password") or "").strip()
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session["user"] = username
+            session["token"] = SESSION_TOKEN
+            return redirect(url_for("index"))
+        return render_template("login.html", error="Invalid credentials"), 401
+    return render_template("login.html", error=None)
+
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.pop("user", None)
+    return redirect(url_for("login"))
 
 
 @app.route('/download', methods=['POST'])

@@ -42,6 +42,14 @@ python main.py
 
 The API and UI will start on `http://localhost:5000`
 
+## Login
+
+The UI and API are protected with a simple local login. Set these environment variables before запуск:
+
+- `YTFIN_USERNAME` (default: `admin`)
+- `YTFIN_PASSWORD` (default: `admin`)
+- `YTFIN_SECRET` (session secret; change this in production)
+
 ## Auto Sources
 
 Add your playlist and channel URLs (one per line):
