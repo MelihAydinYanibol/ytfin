@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YtFin</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="bg-shapes"></div>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Jellyfin Pipeline</p>
+        <h1>YtFin Download Station</h1>
+        <p class="subtitle">Playlist and channel monitoring with a live queue.</p>
+      </div>
+      <div class="card tiny">
+        <p class="label">Defaults</p>
+        <p class="value">Max 1080p, MKV Stream Copy</p>
+        <p class="label">Check interval</p>
+        <p class="value">15 min</p>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Manual Add</h2>
+        <form id="add-form" class="stack">
+          <label>
+            <span>Video URL</span>
+            <input type="url" id="video-url" placeholder="https://www.youtube.com/watch?v=..." required />
+          </label>
+          <div class="row">
+            <label>
+              <span>Resolution</span>
+              <input type="text" id="resolution" value="1080p" />
+            </label>
+            <label>
+              <span>Codec</span>
+              <select id="codec">
+                <option value="copy" selected>Stream Copy (fast)</option>
+              </select>
+            </label>
+          </div>
+          <div class="row">
+            <label>
+              <span>FPS</span>
+              <input type="number" id="fps" placeholder="Keep original" min="1" />
+            </label>
+            <button type="submit" class="btn primary">Queue Download</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Controls</h2>
+        <div class="controls">
+          <button id="pause" class="btn">Pause Queue</button>
+          <button id="resume" class="btn">Resume Queue</button>
+          <button id="stop-current" class="btn danger">Stop Current</button>
+          <button id="check-playlists" class="btn">Check Playlists Now</button>
+          <button id="check-channels" class="btn">Check Channels Now</button>
+        </div>
+        <div class="hint">
+          <p>Auto sources:</p>
+          <p><code>playlists.txt</code> and <code>channels.txt</code> (one URL per line)</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row space-between">
+        <h2>Sources</h2>
+        <button id="save-sources" class="btn primary">Save Sources</button>
+      </div>
+      <div class="grid">
+        <label>
+          <span>Playlists (one URL per line)</span>
+          <textarea id="playlists" rows="7" placeholder="https://www.youtube.com/playlist?list=..."></textarea>
+        </label>
+        <label>
+          <span>Channels (one URL per line)</span>
+          <textarea id="channels" rows="7" placeholder="https://www.youtube.com/@channel"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row space-between">
+        <h2>Queue & Jobs</h2>
+        <button id="refresh" class="btn">Refresh</button>
+      </div>
+      <div id="status" class="status">Loading...</div>
+      <div id="jobs" class="jobs"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

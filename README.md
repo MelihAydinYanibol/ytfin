@@ -1,6 +1,6 @@
 # YouTube Video Downloader API
 
-A Flask API for downloading YouTube videos at specified resolutions using yt-dlp, with FFmpeg support for format conversion and FPS adjustment.
+A Flask API and UI for downloading YouTube videos, plus background monitoring of playlists and channels. Uses yt-dlp with FFmpeg support for format conversion and FPS adjustment.
 
 ## Prerequisites
 
@@ -40,7 +40,16 @@ pip install -r requirements.txt
 python main.py
 ```
 
-The API will start on `http://localhost:5000`
+The API and UI will start on `http://localhost:5000`
+
+## Auto Sources
+
+Add your playlist and channel URLs (one per line):
+
+- [playlists.txt](playlists.txt)
+- [channels.txt](channels.txt)
+
+The monitor checks every 15 minutes and queues any new videos it has not downloaded yet.
 
 ## Endpoints
 
@@ -86,7 +95,7 @@ curl "http://localhost:5000/fps?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ```
 
 ### POST /download
-Download a video at specified resolution with optional FPS control and codec selection.
+Queue a video download at specified resolution with optional FPS control and codec selection.
 
 **Request Body:**
 ```json
@@ -129,12 +138,7 @@ curl -X POST http://localhost:5000/download \
 ```json
 {
   "success": true,
-  "message": "Download and conversion completed",
-  "filename": "Video_Title.mkv",
-  "title": "Video Title",
-  "format": "mkv",
-  "codec": "hevc",
-  "fps": 30
+  "job_id": "..."
 }
 ```
 
@@ -164,6 +168,8 @@ curl http://localhost:5000/health
 - **FPS Control**: Set custom frame rate for the output video (requires FFmpeg)
 - **Format Conversion**: Automatically converts downloaded videos to MKV format
 - **Audio/Video Merging**: Automatically combines the best video and audio streams
+- **Background Monitor**: Checks playlists and channels on a schedule
+- **Download Queue**: Pause/resume queue and stop current downloads from the UI
 - **Error Handling**: Comprehensive error responses for troubleshooting
 
 ## Download Location

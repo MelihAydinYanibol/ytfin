@@ -73,3 +73,5 @@ htmlcov/
 *.mo
 .env.local
 .env.*.local
+
+downloads/
