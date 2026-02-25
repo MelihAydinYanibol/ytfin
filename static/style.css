@@ -1,14 +1,56 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;600&display=swap');
 
 :root {
+  --bg: #101010;
+  --bg-surface: #181818;
+  --ink: #e0e0e0;
+  --ink-bright: #ffffff;
+  --muted: #999999;
+  --accent: #00a4dc;
+  --accent-hover: #0088b8;
+  --accent-2: #aa5cc3;
+  --card: #1c1c1e;
+  --border: #2a2a2e;
+  --input-bg: #252528;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --job-bg: #1e1e22;
+  --code-bg: #252528;
+  --error: #cf4944;
+  --success: #4caf50;
+}
+
+[data-theme="light"] {
   --bg: #f5f1e9;
+  --bg-surface: #ffffff;
   --ink: #1a1612;
+  --ink-bright: #1a1612;
   --muted: #6d6259;
-  --accent: #e16b2f;
-  --accent-2: #2f6be1;
+  --accent: #00a4dc;
+  --accent-hover: #0088b8;
+  --accent-2: #aa5cc3;
   --card: #fffaf3;
   --border: #e4d8c7;
+  --input-bg: #ffffff;
   --shadow: rgba(26, 22, 18, 0.12);
+  --job-bg: #ffffff;
+  --code-bg: #f0e6d8;
+  --error: #b0352b;
+  --success: #2e7d32;
+}
+
+[data-theme="light"] body {
+  background: radial-gradient(circle at 10% 10%, #ffe7d2, transparent 45%),
+              radial-gradient(circle at 90% 20%, #d6e5ff, transparent 50%),
+              var(--bg);
+}
+
+[data-theme="light"] .bg-shapes {
+  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.6) 40%, transparent 75%);
+  opacity: 0.6;
+}
+
+[data-theme="light"] code {
+  color: var(--ink);
 }
 
 * {
@@ -19,8 +61,8 @@ body {
   margin: 0;
   font-family: "Space Grotesk", "IBM Plex Mono", sans-serif;
   color: var(--ink);
-  background: radial-gradient(circle at 10% 10%, #ffe7d2, transparent 45%),
-              radial-gradient(circle at 90% 20%, #d6e5ff, transparent 50%),
+  background: radial-gradient(circle at 10% 10%, rgba(0, 164, 220, 0.06), transparent 45%),
+              radial-gradient(circle at 90% 20%, rgba(170, 92, 195, 0.05), transparent 50%),
               var(--bg);
   min-height: 100vh;
 }
@@ -28,9 +70,9 @@ body {
 .bg-shapes {
   position: fixed;
   inset: 0;
-  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.6) 40%, transparent 75%);
+  background: linear-gradient(120deg, transparent 0%, rgba(0, 164, 220, 0.03) 40%, transparent 75%);
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .shell {
@@ -60,6 +102,11 @@ body {
 h1 {
   font-size: clamp(2.4rem, 4vw, 3.6rem);
   margin: 0 0 12px;
+  color: var(--ink-bright);
+}
+
+h2 {
+  color: var(--ink-bright);
 }
 
 .subtitle {
@@ -121,9 +168,20 @@ input, select, textarea {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: #ffffff;
+  background: var(--input-bg);
+  color: var(--ink);
   font-size: 0.95rem;
   font-family: "IBM Plex Mono", monospace;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+select option {
+  background: var(--input-bg);
+  color: var(--ink);
 }
 
 textarea {
@@ -135,21 +193,27 @@ textarea {
   padding: 10px 16px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--bg-surface);
+  color: var(--ink);
   cursor: pointer;
   font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 16px -14px var(--shadow);
+  background: var(--input-bg);
 }
 
 .btn.primary {
   background: var(--accent);
   color: #fff;
   border-color: transparent;
+}
+
+.btn.primary:hover {
+  background: var(--accent-hover);
 }
 
 .btn.danger {
@@ -179,7 +243,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 14px;
-  background: #fff;
+  background: var(--job-bg);
   display: grid;
   gap: 6px;
 }
@@ -201,7 +265,8 @@ textarea {
 
 code {
   font-family: "IBM Plex Mono", monospace;
-  background: #f0e6d8;
+  background: var(--code-bg);
+  color: var(--accent);
   padding: 2px 6px;
   border-radius: 6px;
 }
@@ -230,7 +295,7 @@ code {
 }
 
 .auth-error {
-  color: #b0352b;
+  color: var(--error);
   font-size: 0.9rem;
 }
 
@@ -242,6 +307,31 @@ code {
 @keyframes rise {
   from { transform: translateY(16px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 16px var(--shadow);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  background: var(--bg-surface);
 }
 
 @media (max-width: 700px) {

@@ -26,8 +26,8 @@ logging.basicConfig(
 )
 
 # Create downloads directory
-DOWNLOAD_DIR = "downloads"
-Path(DOWNLOAD_DIR).mkdir(exist_ok=True)
+DOWNLOAD_DIR = os.environ.get("YTFIN_DOWNLOAD_DIR", "downloads")
+Path(DOWNLOAD_DIR).mkdir(parents=True, exist_ok=True)
 
 PLAYLISTS_FILE = "playlists.txt"
 CHANNELS_FILE = "channels.txt"
@@ -980,4 +980,4 @@ if __name__ == '__main__':
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
         monitor_thread = threading.Thread(target=background_monitor, daemon=True)
         monitor_thread.start()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=4999)
