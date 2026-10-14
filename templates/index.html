@@ -1,103 +1,202 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>YtFin</title>
-  <link rel="stylesheet" href="/static/style.css" />
-</head>
-<body>
-  <div class="bg-shapes"></div>
-  <main class="shell">
-    <header class="hero">
-      <div>
-        <p class="eyebrow">Jellyfin Pipeline</p>
-        <h1>YtFin Download Station</h1>
-        <p class="subtitle">Playlist and channel monitoring with a live queue.</p>
-      </div>
-      <div class="card tiny">
-        <p class="label">Defaults</p>
-        <p class="value">Max 1080p, MKV Stream Copy</p>
-        <p class="label">Check interval</p>
-        <p class="value">15 min</p>
-      </div>
-    </header>
+{% extends "base.html" %}
+{% block body %}
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span>YtFin</div>
+    <div class="topbar-status">
+      <span id="queue-pill" class="pill">Connecting…</span>
+      <span id="connection-pill" class="pill pill-error" hidden>Offline</span>
+    </div>
+    <nav class="topbar-actions">
+      <button class="icon-btn" id="open-settings" type="button" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+      <button class="icon-btn" id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle theme"></button>
+      {% if auth_enabled %}
+      <form method="post" action="{{ url_for('logout') }}">
+        <button class="btn ghost small" type="submit" title="Signed in as {{ username }}">Sign out</button>
+      </form>
+      {% endif %}
+    </nav>
+  </div>
+</header>
 
-    <section class="grid">
-      <div class="card">
-        <h2>Manual Add</h2>
-        <form id="add-form" class="stack">
-          <label>
-            <span>Video URL</span>
-            <input type="url" id="video-url" placeholder="https://www.youtube.com/watch?v=..." required />
+<main class="shell">
+  <div id="banners" class="banners"></div>
+
+  <section class="stats" aria-label="Summary">
+    <div class="stat"><span class="stat-value" id="stat-queued">–</span><span class="stat-label">Queued</span></div>
+    <div class="stat"><span class="stat-value accent" id="stat-active">–</span><span class="stat-label">Active</span></div>
+    <div class="stat"><span class="stat-value success" id="stat-completed">–</span><span class="stat-label">Completed</span></div>
+    <div class="stat"><span class="stat-value error" id="stat-failed">–</span><span class="stat-label">Failed</span></div>
+    <div class="stat"><span class="stat-value" id="stat-library">–</span><span class="stat-label">In library</span></div>
+  </section>
+
+  <section class="grid two">
+    <div class="card">
+      <div class="card-head"><h2>Add a video</h2></div>
+      <form id="add-form" class="stack" novalidate>
+        <label class="field">
+          <span>Video URL</span>
+          <div class="input-group">
+            <input type="url" id="video-url" placeholder="https://www.youtube.com/watch?v=…" required autocomplete="off" />
+            <button type="button" class="btn" id="probe-btn" title="Look up title and available resolutions">Look up</button>
+          </div>
+        </label>
+        <div id="probe-result" class="probe" hidden></div>
+        <div class="row">
+          <label class="field grow">
+            <span>Max resolution</span>
+            <select id="resolution">
+              {% for res in resolutions %}<option value="{{ res }}">{{ "Best available" if res == "best" else res }}</option>{% endfor %}
+            </select>
           </label>
-          <div class="row">
-            <label>
-              <span>Resolution</span>
-              <input type="text" id="resolution" value="1080p" />
-            </label>
-            <label>
-              <span>Codec</span>
-              <select id="codec">
-                <option value="copy" selected>Stream Copy (fast)</option>
-              </select>
-            </label>
-          </div>
-          <div class="row">
-            <label>
-              <span>FPS</span>
-              <input type="number" id="fps" placeholder="Keep original" min="1" />
-            </label>
-            <button type="submit" class="btn primary">Queue Download</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="card">
-        <h2>Controls</h2>
-        <div class="controls">
-          <button id="pause" class="btn">Pause Queue</button>
-          <button id="resume" class="btn">Resume Queue</button>
-          <button id="stop-current" class="btn danger">Stop Current</button>
-          <button id="check-playlists" class="btn">Check Playlists Now</button>
-          <button id="check-channels" class="btn">Check Channels Now</button>
+          <button type="submit" class="btn primary align-end" id="add-btn">Queue download</button>
         </div>
-        <div class="hint">
-          <p>Auto sources:</p>
-          <p><code>playlists.txt</code> and <code>channels.txt</code> (one URL per line)</p>
+        <p class="hint">Output is MKV with stream copy (no re-encode), plus thumbnail, subtitles and <code>.nfo</code> metadata.</p>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Queue & monitor</h2></div>
+      <div class="control-row">
+        <button id="toggle-pause" class="btn" type="button">Pause queue</button>
+        <button id="stop-current" class="btn danger" type="button">Stop current</button>
+      </div>
+      <div class="monitor">
+        <div class="monitor-row">
+          <div>
+            <strong>Playlists</strong>
+            <p class="muted small" id="monitor-playlists">Never checked</p>
+          </div>
+          <button class="btn small" data-check="playlists" type="button">Check now</button>
         </div>
+        <div class="monitor-row">
+          <div>
+            <strong>Channels</strong>
+            <p class="muted small" id="monitor-channels">Never checked</p>
+          </div>
+          <button class="btn small" data-check="channels" type="button">Check now</button>
+        </div>
+        <p class="muted small" id="monitor-next"></p>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="card">
-      <div class="row space-between">
-        <h2>Sources</h2>
-        <button id="save-sources" class="btn primary">Save Sources</button>
+  <section class="card">
+    <div class="card-head">
+      <h2>Jobs</h2>
+      <div class="card-actions">
+        <div class="tabs" role="tablist" id="job-filters">
+          <button class="tab active" data-filter="all" role="tab">All</button>
+          <button class="tab" data-filter="active" role="tab">Active</button>
+          <button class="tab" data-filter="completed" role="tab">Completed</button>
+          <button class="tab" data-filter="failed" role="tab">Failed</button>
+        </div>
+        <button id="clear-finished" class="btn ghost small" type="button">Clear finished</button>
       </div>
-      <div class="grid">
-        <label>
-          <span>Playlists (one URL per line)</span>
-          <textarea id="playlists" rows="7" placeholder="https://www.youtube.com/playlist?list=..."></textarea>
+    </div>
+    <div id="jobs" class="jobs"><div class="empty">Loading…</div></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Sources</h2>
+      <div class="card-actions">
+        <span id="sources-dirty" class="muted small" hidden>Unsaved changes</span>
+        <button id="save-sources" class="btn primary small" type="button">Save sources</button>
+      </div>
+    </div>
+    <p class="hint">One URL per line. Lines starting with <code>#</code> are ignored. Saved to <code>playlists.txt</code> and <code>channels.txt</code>.</p>
+    <div class="grid two">
+      <label class="field">
+        <span>Playlists <span class="muted" id="playlists-count"></span></span>
+        <textarea id="playlists" rows="7" spellcheck="false" placeholder="https://www.youtube.com/playlist?list=…"></textarea>
+      </label>
+      <label class="field">
+        <span>Channels <span class="muted" id="channels-count"></span></span>
+        <textarea id="channels" rows="7" spellcheck="false" placeholder="https://www.youtube.com/@channel"></textarea>
+      </label>
+    </div>
+  </section>
+</main>
+
+<dialog id="settings-dialog" class="dialog">
+  <form id="settings-form" method="dialog" class="stack">
+    <div class="card-head">
+      <h2>Settings</h2>
+      <button class="icon-btn" value="cancel" formnovalidate aria-label="Close">✕</button>
+    </div>
+
+    <fieldset>
+      <legend>Security</legend>
+      <label class="switch">
+        <input type="checkbox" name="auth_enabled" />
+        <span class="switch-track"></span>
+        <span>
+          <strong>Require login</strong>
+          <span class="muted small block">Turn off only on a trusted network. Anyone who can reach the server gets full access.</span>
+        </span>
+      </label>
+      <p class="alert alert-warn small" id="auth-locked" hidden>This is set by the <code>YTFIN_AUTH_ENABLED</code> environment variable and can't be changed here.</p>
+      <p class="alert alert-warn small" id="default-creds" hidden>You're using the default <code>admin</code>/<code>admin</code> login. Set <code>YTFIN_USERNAME</code> and <code>YTFIN_PASSWORD</code> in <code>.env</code>.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Monitoring</legend>
+      <label class="switch">
+        <input type="checkbox" name="monitor_enabled" />
+        <span class="switch-track"></span>
+        <span><strong>Check sources automatically</strong></span>
+      </label>
+      <div class="row">
+        <label class="field grow">
+          <span>Check interval (minutes)</span>
+          <input type="number" name="check_interval_minutes" min="1" max="10080" required />
         </label>
-        <label>
-          <span>Channels (one URL per line)</span>
-          <textarea id="channels" rows="7" placeholder="https://www.youtube.com/@channel"></textarea>
+        <label class="field grow">
+          <span>Latest videos per channel</span>
+          <input type="number" name="channel_video_limit" min="1" max="500" required />
         </label>
       </div>
-    </section>
+    </fieldset>
 
-    <section class="card">
-      <div class="row space-between">
-        <h2>Queue & Jobs</h2>
-        <button id="refresh" class="btn">Refresh</button>
+    <fieldset>
+      <legend>Downloads</legend>
+      <div class="row">
+        <label class="field grow">
+          <span>Default max resolution</span>
+          <select name="default_resolution">
+            {% for res in resolutions %}<option value="{{ res }}">{{ "Best available" if res == "best" else res }}</option>{% endfor %}
+          </select>
+        </label>
+        <label class="field grow">
+          <span>Subtitle languages</span>
+          <input type="text" name="subtitle_languages" placeholder="en, de (empty = none)" />
+        </label>
       </div>
-      <div id="status" class="status">Loading...</div>
-      <div id="jobs" class="jobs"></div>
-    </section>
-  </main>
+      <label class="switch">
+        <input type="checkbox" name="embed_thumbnail" />
+        <span class="switch-track"></span>
+        <span><strong>Embed thumbnail as cover art</strong></span>
+      </label>
+      <label class="switch">
+        <input type="checkbox" name="write_nfo" />
+        <span class="switch-track"></span>
+        <span><strong>Write <code>.nfo</code> metadata for Jellyfin</strong></span>
+      </label>
+      <label class="field">
+        <span>Finished jobs to keep in the list</span>
+        <input type="number" name="max_job_history" min="10" max="5000" required />
+      </label>
+    </fieldset>
 
-  <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
-  <script src="/static/app.js"></script>
-  <script src="/static/theme.js"></script>
-</body>
-</html>
+    <p class="alert alert-error small" id="settings-error" hidden></p>
+    <div class="row end">
+      <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" id="save-settings" value="save">Save settings</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

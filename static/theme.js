@@ -1,28 +1,28 @@
 (function () {
   const KEY = "ytfin-theme";
-  const btn = document.getElementById("theme-toggle");
   const root = document.documentElement;
+  const btn = document.getElementById("theme-toggle");
+
+  function current() {
+    return root.getAttribute("data-theme") === "light" ? "light" : "dark";
+  }
 
   function apply(theme) {
-    if (theme === "light") {
-      root.setAttribute("data-theme", "light");
-      btn.textContent = "\u2600\uFE0F";
-      btn.title = "Switch to dark mode";
-    } else {
-      root.removeAttribute("data-theme");
-      btn.textContent = "\uD83C\uDF19";
-      btn.title = "Switch to light mode";
+    if (theme === "light") root.setAttribute("data-theme", "light");
+    else root.removeAttribute("data-theme");
+    if (btn) {
+      btn.textContent = theme === "light" ? "☀️" : "🌙";
+      btn.title = theme === "light" ? "Switch to dark mode" : "Switch to light mode";
     }
   }
 
-  // Load saved preference, default to dark
-  const saved = localStorage.getItem(KEY) || "dark";
-  apply(saved);
+  apply(current());
 
-  btn.addEventListener("click", function () {
-    const current = root.getAttribute("data-theme") === "light" ? "light" : "dark";
-    const next = current === "dark" ? "light" : "dark";
-    localStorage.setItem(KEY, next);
-    apply(next);
-  });
+  if (btn) {
+    btn.addEventListener("click", function () {
+      const next = current() === "dark" ? "light" : "dark";
+      try { localStorage.setItem(KEY, next); } catch (e) { /* storage may be blocked */ }
+      apply(next);
+    });
+  }
 })();

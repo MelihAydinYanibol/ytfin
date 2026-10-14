@@ -35,29 +35,47 @@ sudo apt-get install ffmpeg
 pip install -r requirements.txt
 ```
 
-2. Run the API:
+2. (Optional) copy `.env.example` to `.env` and adjust it.
+
+3. Run the app:
 ```bash
 python main.py
 ```
 
-The API and UI will start on `http://localhost:5000`
+The UI and API start on `http://localhost:4999` (change with `YTFIN_PORT`). The UI works on phones too.
 
-## Login
+## Configuration
 
-The UI and API are protected with a simple local login. Set these environment variables before запуск:
+### Environment (`.env`)
 
-- `YTFIN_USERNAME` (default: `admin`)
-- `YTFIN_PASSWORD` (default: `admin`)
-- `YTFIN_SECRET` (session secret; change this in production)
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `YTFIN_USERNAME` / `YTFIN_PASSWORD` | `admin` / `admin` | Login credentials |
+| `YTFIN_SECRET` | random per start | Session signing key |
+| `YTFIN_AUTH_ENABLED` | *(unset)* | Force login on (`true`) or off (`false`), overriding the UI setting |
+| `YTFIN_DOWNLOAD_DIR` | `downloads` | Output folder |
+| `YTFIN_HOST` / `YTFIN_PORT` | `0.0.0.0` / `4999` | Listen address |
+| `YTFIN_DEBUG` | `false` | Flask debug mode |
+
+### Settings (in the UI)
+
+Open the ⚙️ button in the top bar. Settings are saved to `settings.json`:
+
+- **Require login**: turn authentication on or off. Only disable it on a trusted network. If you lock yourself out, set `YTFIN_AUTH_ENABLED=false` in `.env` and restart.
+- **Check sources automatically**, **check interval** and **latest videos per channel**
+- **Default max resolution** (`best`, `2160p` … `360p`)
+- **Subtitle languages** (comma separated, empty for none)
+- **Embed thumbnail** and **write `.nfo` metadata**
+- **Finished jobs to keep** in the list
 
 ## Auto Sources
 
-Add your playlist and channel URLs (one per line):
+Add playlist and channel URLs in the **Sources** card, or edit these files directly (one URL per line, `#` for comments):
 
 - [playlists.txt](playlists.txt)
 - [channels.txt](channels.txt)
 
-The monitor checks every 15 minutes and queues any new videos it has not downloaded yet.
+The monitor checks them on the configured interval and queues any videos that haven't been downloaded yet. Use **Check now** to run a check immediately. Errors for individual sources are shown in the UI and don't stop the other sources.
 
 ## What Gets Saved
 
@@ -69,118 +87,57 @@ For each video, the app writes:
 - `Title [videoId].nfo` (Kodi-style metadata for Jellyfin)
 - `Title [videoId].info.json` (raw yt-dlp metadata)
 
-## Endpoints
+## API
 
-### GET /resolutions
-Get available resolutions for a video.
+All endpoints except `/health` need a logged-in session while login is enabled. Requests that change state must send JSON (`Content-Type: application/json`). Errors always come back as `{"success": false, "error": "..."}` with a matching HTTP status.
 
-**Query Parameters:**
-- `url` (required): YouTube video URL
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/health` | Health check, FFmpeg availability |
+| `GET` | `/api/status` | Queue state, counts, monitor status |
+| `GET` | `/api/jobs` | All jobs with progress |
+| `POST` | `/api/jobs` | Queue a video: `{"url": "...", "resolution": "1080p"}` (resolution optional) |
+| `POST` | `/api/jobs/<id>/cancel` | Cancel a queued or running job |
+| `POST` | `/api/jobs/<id>/retry` | Retry a failed or canceled job |
+| `DELETE` | `/api/jobs/<id>` | Remove a finished job from the list |
+| `POST` | `/api/jobs/clear` | Remove all finished jobs |
+| `POST` | `/api/pause`, `/api/resume`, `/api/stop-current` | Queue controls |
+| `POST` | `/api/check/playlists`, `/api/check/channels` | Run a source check in the background |
+| `GET` / `POST` | `/api/sources` | Read or save `playlists` and `channels` text |
+| `GET` / `POST` | `/api/settings` | Read or update settings (partial updates allowed) |
+| `GET` | `/api/probe?url=...` | Title, channel, resolutions and FPS for a video |
 
-**Example:**
+The original `POST /download`, `GET /resolutions` and `GET /fps` endpoints still work.
+
+**Example** (with login disabled):
 ```bash
-curl "http://localhost:5000/resolutions?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "title": "Video Title",
-  "resolutions": ["1080p", "720p", "480p", "360p", "240p"]
-}
-```
-
-### GET /fps
-Get available frame rates (FPS) for a video.
-
-**Query Parameters:**
-- `url` (required): YouTube video URL
-
-**Example:**
-```bash
-curl "http://localhost:5000/fps?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "title": "Video Title",
-  "available_fps": [60, 30],
-  "original_fps": 30
-}
-```
-
-### POST /download
-Queue a video download at specified resolution. This is enqueued and processed by the download worker.
-
-**Request Body:**
-```json
-{
-  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-  "resolution": "720p",
-  "fps": 30,
-  "codec": "copy"
-}
-```
-
-**Parameters:**
-- `url` (required): YouTube video URL
-- `resolution` (required): Target resolution (e.g., "720p", "1080p")
-- `fps` (optional): Not supported in stream copy mode (leave empty)
-- `codec` (optional): Only "copy" is supported (stream copy)
-
-**Example (stream copy):**
-```bash
-curl -X POST http://localhost:5000/download \
+curl -X POST http://localhost:4999/api/jobs \
   -H "Content-Type: application/json" \
   -d '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","resolution":"720p"}'
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "job_id": "..."
-}
-```
-
-### GET /health
-Health check endpoint. Shows FFmpeg availability.
-
-**Example:**
-```bash
-curl http://localhost:5000/health
-```
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "ffmpeg_available": true
-}
 ```
 
 ## Features
 
 - **Playlist + Channel Monitor**: Checks configured sources on a schedule
-- **Queue Worker**: Runs downloads in the background, with pause/resume/stop
+- **Queue Worker**: Runs downloads in the background with live progress, pause/resume, cancel and retry
 - **Stream Copy Remux**: Fast MKV output without re-encoding
 - **Jellyfin-Friendly Sidecars**: Thumbnails, subtitles, and `.nfo` metadata
-- **UI Controls**: Manual add, manual checks, and source editor
+- **Responsive UI**: Works on desktop and mobile, with light and dark themes
+- **Settings**: Toggle login, monitoring, resolution, subtitles and more from the UI
 
 ## Download Location
 
-Downloaded videos are saved in the `downloads/` directory in MKV format.
+Downloaded videos are saved in `YTFIN_DOWNLOAD_DIR` (default `downloads/`) in MKV format. Partial files are cleaned up when a download fails or is canceled.
 
 ## Testing
 
 Run the test script to verify the API:
 
+`test.py` needs login turned off (`YTFIN_AUTH_ENABLED=false`).
+
 ```bash
 # Terminal 1: Start the API
-python main.py
+YTFIN_AUTH_ENABLED=false python main.py
 
 # Terminal 2: Run tests
 python test.py
@@ -196,6 +153,5 @@ The test script will:
 
 - Stream copy is fast and preserves the source quality (no re-encode)
 - If the exact resolution isn't available, the closest lower resolution will be used
-- The API runs in debug mode by default; change for production use
 - Jellyfin should be configured to “Use local metadata” and “Use external subtitles”
 

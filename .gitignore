@@ -75,3 +75,6 @@ htmlcov/
 .env.*.local
 
 downloads/
+# Runtime data
+settings.json
+*.tmp

@@ -1,34 +1,24 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>YtFin Login</title>
-  <link rel="stylesheet" href="/static/style.css" />
-</head>
-<body>
-  <div class="bg-shapes"></div>
-  <main class="shell auth-shell">
-    <section class="card auth-card">
-      <h1>Sign In</h1>
-      <p class="subtitle">Enter your local credentials to access YtFin.</p>
-      <form method="post" class="stack">
-        <label>
-          <span>Username</span>
-          <input type="text" name="username" required />
-        </label>
-        <label>
-          <span>Password</span>
-          <input type="password" name="password" required />
-        </label>
-        <button type="submit" class="btn primary">Login</button>
-        {% if error %}
-          <p class="auth-error">{{ error }}</p>
-        {% endif %}
-      </form>
-    </section>
-  </main>
-  <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
-  <script src="/static/theme.js"></script>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Sign in · YtFin{% endblock %}
+{% block body_class %}centered{% endblock %}
+{% block body %}
+<main class="auth-shell">
+  <section class="card auth-card">
+    <div class="brand brand-lg"><span class="brand-mark" aria-hidden="true"></span>YtFin</div>
+    <p class="muted">Sign in to manage your downloads.</p>
+    <form method="post" class="stack" autocomplete="on">
+      <label class="field">
+        <span>Username</span>
+        <input type="text" name="username" value="{{ username }}" autocomplete="username" required autofocus />
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input type="password" name="password" autocomplete="current-password" required />
+      </label>
+      {% if error %}<p class="alert alert-error" role="alert">{{ error }}</p>{% endif %}
+      <button type="submit" class="btn primary block">Sign in</button>
+    </form>
+  </section>
+  <button class="icon-btn floating" id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle theme"></button>
+</main>
+{% endblock %}

@@ -1,9 +1,12 @@
+import os
 import requests
 import json
 import time
 
 # API base URL
-BASE_URL = "http://localhost:5000"
+BASE_URL = os.environ.get("YTFIN_URL", "http://localhost:4999")
+
+# These tests need login turned off (Settings -> Require login, or YTFIN_AUTH_ENABLED=false).
 
 # Test video URL (short public domain video)
 TEST_VIDEO_URL = "https://www.youtube.com/watch?v=BCFAWkS_I8s"
@@ -55,10 +58,10 @@ def test_get_fps(url):
         return False, []
 
 
-def test_download_video(url, resolution, fps=None, codec='h264'):
+def test_download_video(url, resolution, fps=None, codec='copy'):
     """Test POST download endpoint"""
     fps_str = f" at {fps}fps" if fps else ""
-    codec_str = f" ({codec})" if codec != 'h264' else ""
+    codec_str = ""
     print(f"\n=== Testing Download Video at {resolution}{fps_str}{codec_str} ===")
     try:
         payload = {
@@ -70,7 +73,7 @@ def test_download_video(url, resolution, fps=None, codec='h264'):
             payload["fps"] = fps
             
         response = requests.post(
-            f"{BASE_URL}/download",
+            f"{BASE_URL}/api/jobs",
             json=payload,
             headers={"Content-Type": "application/json"}
         )
@@ -80,7 +83,6 @@ def test_download_video(url, resolution, fps=None, codec='h264'):
         return result.get('success', False)
     except Exception as e:
         print(f"Error: {e}")
-        return False
         return False
 
 
@@ -113,38 +115,11 @@ def main():
     
     print(f"✓ Got available FPS: {fps_values}")
     
-    # Test download with the highest resolution available
     if resolutions:
-        highest_resolution = resolutions[0]  # First one is highest
-        
-        # Test H.264 without fps
-        print(f"\n\nDownloading with {highest_resolution} resolution (H.264)...")
-        if test_download_video(TEST_VIDEO_URL, highest_resolution, codec='h264'):
-            print(f"✓ H.264 Download started successfully!")
-            print("Check the 'downloads/' folder for the video file.")
+        if test_download_video(TEST_VIDEO_URL, resolutions[0]):
+            print("✓ Download queued. Watch progress in the UI; files land in the download folder.")
         else:
-            print(f"❌ H.264 Download failed")
-        
-        # Test HEVC without fps
-        print(f"\n\nDownloading with {highest_resolution} resolution (HEVC)...")
-        if test_download_video(TEST_VIDEO_URL, highest_resolution, codec='hevc'):
-            print(f"✓ HEVC Download started successfully!")
-            print("Check the 'downloads/' folder for the video file (smaller file size).")
-        else:
-            print(f"❌ HEVC Download failed (FFmpeg may not support libx265)")
-        
-        # Test with specific fps if available
-        if fps_values:
-            selected_fps = fps_values[0]  # Use highest available fps
-            
-            print(f"\n\nDownloading with {highest_resolution} resolution at {selected_fps}fps (HEVC)...")
-            if test_download_video(TEST_VIDEO_URL, highest_resolution, fps=selected_fps, codec='hevc'):
-                print(f"✓ HEVC Download with FPS conversion started successfully!")
-                print("Check the 'downloads/' folder for the video file (MKV format).")
-            else:
-                print(f"❌ HEVC Download with FPS conversion failed (FFmpeg may not be installed)")
-        else:
-            print("\n⚠ No FPS information available from source")
+            print("❌ Failed to queue download")
     else:
         print("\n❌ No resolutions available to test download")
 
